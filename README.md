@@ -79,3 +79,70 @@ The Gold-layer outputs are suitable for:
 - financial summaries and reconciliation
 - quality measurement pipelines (e.g., HEDIS-style analytics)
 - BI dashboards and downstream machine learning workflows
+
+## Design Decisions & Tradeoffs
+
+Several intentional design decisions were made to balance data quality, performance,
+and operational simplicity.
+
+### Medallion Architecture
+A Bronze → Silver → Gold structure was chosen to:
+- isolate raw ingestion from business logic
+- enable safe reprocessing and backfills
+- make data quality enforcement explicit
+
+### Deduplication in the Silver Layer
+Claims deduplication is performed in the Silver layer rather than at ingestion to:
+- preserve raw source fidelity
+- allow deterministic replay of source data
+- support evolving business rules without reloading raw data
+
+### Materialization Choices
+- Bronze models favor lightweight transformations to minimize compute cost
+- Silver models prioritize correctness and determinism
+- Gold models are optimized for downstream consumption
+
+These tradeoffs favor reliability and transparency over premature optimization.
+
+---
+
+## Production Hardening Checklist
+
+The following items represent standard production hardening steps for this pipeline:
+
+- [x] Clear separation of raw, cleaned, and aggregated data
+- [x] Source-level integrity tests on key identifiers
+- [ ] Source freshness checks with alerting
+- [ ] Incremental processing for high-volume models
+- [ ] Row count and financial reconciliation across layers
+- [ ] Data contract validation for downstream consumers
+- [ ] Monitoring for late-arriving and reprocessed data
+- [ ] CI enforcement for tests and documentation generation
+
+This checklist reflects common requirements in regulated and financially sensitive
+data environments.
+
+---
+
+## Mapping to Real Healthcare Claims Systems
+
+This pipeline mirrors patterns commonly found in healthcare payer and TPA data
+platforms.
+
+### Source Characteristics
+- Append-only claim files
+- Periodic reprocessing of historical data
+- Late-arriving adjustments and corrections
+
+### Operational Realities
+- Claims may appear multiple times with different load timestamps
+- Financial fields must remain auditable across versions
+- Downstream consumers require stable, trusted aggregates
+
+### Platform Alignment
+- Fivetran handles ingestion and schema drift
+- dbt enforces transformation logic, testing, and lineage
+- Snowflake provides scalable storage and compute separation
+
+These patterns support reliable analytics while maintaining traceability and control
+across the full claims lifecycle.
